@@ -28,6 +28,23 @@
     --green-dark:#279463;
     --purple:#9b6fd6;
   }
+    
+    <div id="gameOverModal" class="modal hidden">
+    <div class="modal-content">
+
+        <h2>Tempo Scaduto!</h2>
+
+        <div id="errorTable" style="max-height:350px;overflow-y:auto;">
+        </div>
+
+        <button id="playAgainBtn">
+            RIGIOCA
+        </button>
+
+    </div>
+</div>
+    
+    
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
   body{
@@ -632,7 +649,7 @@
 <div id="nickModal" class="modal-overlay">
   <div class="modal-box">
     <h3>worDS</h3>
-      <p>Inserisci un nickname per iniziare.
+    <p>Inserisci un nickname per iniziare.
 <br>Verrà usato per salvare i tuoi punteggi in classifica.
 <br>Hai 100 secondi: ogni 3 parole azzeccate di fila guadagni +15s!.</p>
     <input id="nickInput" maxlength="16" placeholder="Nickname" autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -700,7 +717,7 @@
           <div class="touch-buttons">
             <button type="button" class="tbtn tbtn-primary" id="checkBtn">VERIFICA</button>
             <button type="button" class="tbtn" id="skipBtn">Bohhh</button>
-            <button type="button" class="tbtn" id="resetBtn">RESET</button>
+            <button type="button" class="tbtn" id="resetBtn">RESTART</button>
           </div>
         </div>
         <div class="screen-shine"></div>
@@ -801,6 +818,7 @@ function buildMeanings(entry){
   return [ entry.t.split(/\/|,/).map(s=>s.trim()).filter(Boolean) ];
 }
 
+// Assicurati che RAW_WORDS sia caricato o presente prima
 const WORDS = RAW_WORDS.map(e => ({
   w: e.w,
   p: e.p,
@@ -814,15 +832,14 @@ let timer = 100;
 let timerInterval = null;    
 let awaitingNext = false;
 
-// ---- nickname / classifica ----
-// ---- nickname / classifica ----
 let playerName = '';
 let maxStreak = 0;
-let runId = null;
+let runId = null; // Unica dichiarazione di runId
+let mistakes = [];
 
 function generateRunId(){
   if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-  return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+  return 'run_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
 const wordEl = document.getElementById('wordEl');
@@ -881,7 +898,6 @@ function nextWord(){
   posTag.className = 'pos-tag ' + cls;
   posTag.textContent = POS_LABEL[current.p] || current.p;
 
-  // restart entry animations
   wordEl.style.animation = 'none';
   posTag.style.animation = 'none';
   void wordEl.offsetWidth;
@@ -905,6 +921,7 @@ function markSVG(isOk){
 
 function showCombo(level){
   const popup = document.getElementById("comboPopup");
+  if(!popup) return;
   popup.innerHTML =
       "🔥 COMBO x" + level +
       "<br><br>" +
@@ -916,47 +933,32 @@ function showCombo(level){
 }     
 
 // ============================================================
-//TIMER
+// TIMER
 // ============================================================    
-    
 function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timer--;
+    const timerEl = document.getElementById("timerCount");
+    if(timerEl) timerEl.textContent = timer;
 
-    clearInterval(timerInterval);
-
-    timerInterval = setInterval(() => {
-
-        timer--;
-
-        document.getElementById("timerCount").textContent = timer;
-
-        if (timer <= 0) {
-
-            clearInterval(timerInterval);
-
-            gameOver();
-
-        }
-
-    }, 1000);
-
+    if (timer <= 0) {
+      clearInterval(timerInterval);
+      gameOver();
+    }
+  }, 1000);
 }  
     
 function resetTimer() {
-
-    clearInterval(timerInterval);
-
-    timer = 100;
-
-    document.getElementById("timerCount").textContent = timer;
-
+  clearInterval(timerInterval);
+  timer = 100;
+  const timerEl = document.getElementById("timerCount");
+  if(timerEl) timerEl.textContent = timer;
 }
-    
- 
-    
-// ============================================================
-// 3. CLASSIFICA FIRESTORE
-// ============================================================
 
+// ============================================================
+// FIRESTORE
+// ============================================================
 async function saveScore() {
   if (!playerName || !runId) return;
   
@@ -1022,16 +1024,9 @@ document.getElementById('lbClose').addEventListener('click', function(){
   document.getElementById('lbModal').style.display = 'none';
 });
 
- // ============================================================
-//  mistakes database
-// ============================================================   
-    let mistakes = [];
-    
-    
 // ============================================================
-// 4. AVVIO PARTITA
+// AVVIO PARTITA
 // ============================================================
-
 function startGame(){
   const val = document.getElementById('nickInput').value.trim();
   if(!val){
@@ -1044,7 +1039,7 @@ function startGame(){
   document.getElementById('nickModal').style.display = 'none';
   brandName.textContent = playerName;
   resetTimer();
-  startTimer();      
+  startTimer();     
   newDeck();
   nextWord();
 }
@@ -1092,20 +1087,14 @@ function submitAnswer(){
   totalWrong += wrongCount;
 
   if (wrongCount > 0) {
-
     mistakes.push({
-
         word: current.w,
         answer: raw,
-        correct: current.meanings
-                    .map(g => g.join(" / "))
-                    .join(" • ")
-
+        correct: current.meanings.map(g => g.join(" / ")).join(" • ")
     });
-
-}
+  }
     
-if (wrongCount === 0 && newCorrect > 0) {
+  if (wrongCount === 0 && newCorrect > 0) {
       streak++;
       maxStreak = Math.max(maxStreak, streak);
       const comboBonus = Math.floor(streak / 3);
@@ -1113,12 +1102,10 @@ if (wrongCount === 0 && newCorrect > 0) {
 
       if(streak % 3 === 0){
           showCombo(streak);
-          // --- INIZIO NUOVO CODICE TIMER ---
           timer += 15; 
-          document.getElementById("timerCount").textContent = timer; // Aggiorna subito il numero a schermo
-          // --- FINE NUOVO CODICE TIMER ---
+          const timerEl = document.getElementById("timerCount");
+          if(timerEl) timerEl.textContent = timer;
       }
- 
   } else {
       points += delta;
       if (wrongCount > 0) {
@@ -1154,9 +1141,7 @@ if (wrongCount === 0 && newCorrect > 0) {
   saveScore();
 }
 
-checkBtn.addEventListener('click', function(){
-  submitAnswer();
-});
+checkBtn.addEventListener('click', submitAnswer);
 
 answerInput.addEventListener('keydown', function(e){
   if(e.key === 'Enter'){
@@ -1174,14 +1159,10 @@ function revealSkipped(){
   totalWrong += 1;
     
   mistakes.push({
-
     word: current.w,
     answer: "(saltata)",
-    correct: current.meanings
-                .map(g => g.join(" / "))
-                .join(" • ")
-
-});  
+    correct: current.meanings.map(g => g.join(" / ")).join(" • ")
+  });  
     
   streak = 0;
 
@@ -1211,8 +1192,8 @@ function revealSkipped(){
 skipBtn.addEventListener('click', revealSkipped);
 
 resetBtn.addEventListener('click', function(){
-
   saveScore();
+  restartGame();    
   runId = generateRunId();
 
   resetTimer();
@@ -1231,48 +1212,85 @@ resetBtn.addEventListener('click', function(){
   newDeck();
   nextWord();
 });
-    
-function gameOver(){
 
-    let html = `
-        <h2>⏰ Tempo scaduto!</h2>
+// ============================================================
+// GAME OVER E RESTART
+// ============================================================
+function gameOver() {
+  wordEl.style.display = 'none';
+  posTag.style.display = 'none';
 
-        <div style="max-height:300px;overflow-y:auto;">
-            <table style="width:100%;border-collapse:collapse;">
-                <tr>
-                    <th>Parola</th>
-                    <th>Risposta</th>
-                    <th>Corretta</th>
-                </tr>
-    `;
+  let html = `
+      <h2 style="margin-top:0;">⏰ Tempo scaduto!</h2>
 
-    mistakes.forEach(m => {
+      <div style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; margin: 10px 0;">
+          <table style="width:100%; border-collapse:collapse; text-align:left;">
+              <thead style="position: sticky; top: 0; background: #f4f4f4; border-bottom: 2px solid #ccc;">
+                  <tr>
+                      <th style="padding: 8px;">Parola</th>
+                      <th style="padding: 8px;">Risposta</th>
+                      <th style="padding: 8px;">Corretta</th>
+                  </tr>
+              </thead>
+              <tbody>
+  `;
 
-        html += `
-            <tr>
-                <td>${m.word}</td>
-                <td>${m.answer}</td>
-                <td>${m.correct}</td>
-            </tr>
-        `;
+  mistakes.forEach(m => {
+      html += `
+          <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 8px; font-weight: bold;">${escapeHtml(m.word)}</td>
+              <td style="padding: 8px; color: #d9534f;">${escapeHtml(m.answer || '-')}</td>
+              <td style="padding: 8px; color: #5cb85c;">${escapeHtml(m.correct)}</td>
+          </tr>
+      `;
+  });
 
-    });
+  html += `
+              </tbody>
+          </table>
+      </div>
 
-    html += `
-            </table>
-        </div>
+      <button id="restartBtn" style="padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px;">
+          🔄 RIGIOCA
+      </button>
+  `;
 
-        <button onclick="location.reload()">
-            RIGIOCA
-        </button>
-    `;
+  feedback.innerHTML = html;
 
-    feedback.innerHTML = html;
+  answerInput.disabled = true;
+  checkBtn.disabled = true;
+  skipBtn.disabled = true;
 
-    answerInput.disabled = true;
-    checkBtn.disabled = true;
-    skipBtn.disabled = true;
+  document.getElementById('restartBtn').addEventListener('click', restartGame);
 }
+    
+function restartGame() {
+  runId = generateRunId();
+
+  wordEl.style.display = '';
+  posTag.style.display = '';
+
+  answerInput.disabled = false;
+  checkBtn.disabled = false;
+  skipBtn.disabled = false;
+
+  points = 0;
+  totalWrong = 0;
+  streak = 0;
+  maxStreak = 0;
+  mistakes = [];
+
+  okCount.textContent = points;
+  document.querySelector('.wrong-count b').textContent = totalWrong;
+  streakCount.textContent = streak;
+
+  resetTimer();
+  startTimer();
+
+  newDeck();
+  nextWord();
+}    
+ 
 // Collegamenti pulsanti fisici DS
 document.getElementById('aBtn').addEventListener('click', () => document.getElementById('checkBtn').click());
 document.getElementById('bBtn').addEventListener('click', () => document.getElementById('skipBtn').click());
@@ -1284,9 +1302,11 @@ document.getElementById('startBtn').addEventListener('click', () => document.get
 // LED di potenza
 const _streakEl = document.getElementById('streakCount');
 const _led = document.getElementById('powerLed');
-new MutationObserver(() => {
-  _led.classList.toggle('off-streak', _streakEl.textContent === '0');
-}).observe(_streakEl, { childList:true, characterData:true, subtree:true });
+if (_streakEl && _led) {
+  new MutationObserver(() => {
+    _led.classList.toggle('off-streak', _streakEl.textContent === '0');
+  }).observe(_streakEl, { childList:true, characterData:true, subtree:true });
+}
 </script>
 </body>
 </html>
