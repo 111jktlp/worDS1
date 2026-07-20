@@ -119,7 +119,7 @@
     position:relative;
     z-index:2;
   }
-  .brand{ color:var(--blue-dark); letter-spacing:.5px;}
+  .brand{ color:var(--blue-dark); letter-spacing:.5px; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .hud{ display:flex; gap:8px; }
   .hud-item{ display:flex; align-items:center; gap:3px; }
   .hud-item b{ color:var(--ink); font-size:.6rem; }
@@ -400,8 +400,9 @@
   .start-select{
     display:flex;
     justify-content:center;
-    gap:10px;
+    gap:8px;
     margin-top:14px;
+    flex-wrap:wrap;
   }
   .pill-btn{
     font-family:'Press Start 2P', monospace;
@@ -469,8 +470,94 @@
     }
 
 }   
-       
-    
+
+  /* ===================== MODALS (nickname / classifica) ===================== */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(20,26,38,.72);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:999;
+    padding:16px;
+  }
+  .modal-box{
+    width:min(92vw,340px);
+    max-height:88vh;
+    overflow-y:auto;
+    background:
+      linear-gradient(155deg, var(--shell-hi) 0%, var(--shell) 45%, var(--shell-lo) 100%);
+    border-radius:20px;
+    padding:22px 18px;
+    box-shadow:0 20px 40px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.7);
+    text-align:center;
+    font-family:'Nunito',sans-serif;
+  }
+  .modal-box h3{
+    font-family:'Baloo 2',cursive;
+    color:var(--ink);
+    margin:0 0 6px;
+    font-size:1.3rem;
+  }
+  .modal-box p{
+    color:var(--ink-soft);
+    font-weight:700;
+    font-size:.78rem;
+    margin:0 0 14px;
+    line-height:1.4;
+  }
+  #nickInput{
+    width:100%;
+    background:#fff;
+    border:none;
+    border-radius:10px;
+    font-family:'Baloo 2',cursive;
+    font-weight:700;
+    font-size:1rem;
+    padding:10px 12px;
+    text-align:center;
+    outline:none;
+    box-shadow:inset 0 2px 4px rgba(0,0,0,.18), inset 0 0 0 2px #cfe0f5;
+    margin-bottom:6px;
+  }
+  #nickInput:focus{ box-shadow:inset 0 2px 4px rgba(0,0,0,.18), inset 0 0 0 2px var(--blue); }
+  .modal-btn{
+    font-family:'Press Start 2P', monospace;
+    font-size:.5rem;
+    color:#fff;
+    background:linear-gradient(180deg, #59a0ff, var(--blue-dark));
+    border:none;
+    border-radius:8px;
+    padding:12px 4px;
+    width:100%;
+    cursor:pointer;
+    box-shadow:0 2px 0 #23478f, inset 0 1px 0 rgba(255,255,255,.4);
+    margin-top:6px;
+  }
+  .modal-btn:active{ transform:translateY(2px); box-shadow:0 0 0 #23478f, inset 0 1px 0 rgba(255,255,255,.4); }
+  #nickError{
+    color:var(--red); font-size:.68rem; font-weight:800; min-height:16px; margin-top:2px;
+  }
+  .lb-list{ max-height:280px; overflow-y:auto; margin:10px 0 14px; text-align:left; }
+  .lb-row{
+    display:grid;
+    grid-template-columns:26px 1fr auto auto;
+    gap:6px;
+    align-items:center;
+    padding:6px 8px;
+    border-radius:8px;
+    font-family:'Nunito',sans-serif;
+    font-weight:800;
+    font-size:.74rem;
+    color:var(--ink);
+  }
+  .lb-row:nth-child(odd){ background:rgba(255,255,255,.55); }
+  .lb-rank{ color:var(--blue-dark); font-family:'Press Start 2P',monospace; font-size:.5rem; }
+  .lb-nick{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lb-pts{ color:var(--green-dark); white-space:nowrap; }
+  .lb-streak{ color:var(--yellow-dark); white-space:nowrap; }
+  .lb-empty,.lb-loading{ color:var(--ink-soft); font-size:.75rem; font-weight:700; padding:14px 0; text-align:center; }
+
   /* ===================== MOBILE ===================== */   
     
     
@@ -542,6 +629,24 @@
 </head>
 <body>
 
+<div id="nickModal" class="modal-overlay">
+  <div class="modal-box">
+    <h3>worDS</h3>
+    <p>Inserisci un nickname per iniziare.<br>Verrà usato per salvare i tuoi punteggi in classifica.</p>
+    <input id="nickInput" maxlength="16" placeholder="Nickname" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div id="nickError"></div>
+    <button type="button" class="modal-btn" id="nickStart">GIOCA ▶</button>
+  </div>
+</div>
+
+<div id="lbModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <h3>🏆 Classifica</h3>
+    <div id="lbList" class="lb-list"></div>
+    <button type="button" class="modal-btn" id="lbClose">Chiudi</button>
+  </div>
+</div>
+
 <div class="ds-wrap">
   <div class="ds-console">
     <div class="cam-dot"></div>
@@ -549,7 +654,7 @@
     <div class="screen-bezel top-bezel">
       <div class="screen top-screen">
         <div class="statusbar">
-          <span class="brand">worDS</span>
+          <span class="brand" id="brandName">worDS</span>
           <span class="hud">
             <span class="hud-item ok">PT <b id="okCount">0</b></span>
             <span class="hud-item wrong wrong-count">✗ <b>0</b></span>
@@ -608,6 +713,7 @@
 
     <div class="start-select">
       <div class="pill-btn" id="selectBtn">SELECT</div>
+      <div class="pill-btn" id="lbBtn">🏆 TOP 10</div>
       <div class="pill-btn" id="startBtn">START</div>
     </div>
   </div>
@@ -686,6 +792,10 @@ let current = null;
 let points = 0, totalWrong = 0, streak = 0;
 let awaitingNext = false;
 
+// ---- nickname / classifica ----
+let playerName = '';
+let maxStreak = 0;
+
 const wordEl = document.getElementById('wordEl');
 const posTag = document.getElementById('posTag');
 const answerInput = document.getElementById('answer');
@@ -696,6 +806,7 @@ const deckStatus = document.getElementById('deckStatus');
 const skipBtn = document.getElementById('skipBtn');
 const resetBtn = document.getElementById('resetBtn');
 const checkBtn = document.getElementById('checkBtn');
+const brandName = document.getElementById('brandName');
 
 function shuffle(arr){
   const a = arr.slice();
@@ -780,6 +891,108 @@ function markSVG(isOk){
     popup.classList.add("show");
 }      
     
+
+// ============================================================
+// CLASSIFICA (storage persistente e condiviso tra le partite)
+// ============================================================
+
+async function saveScore(){
+  if(!playerName) return;
+  try{
+    const key = 'leaderboard:' + normalize(playerName).replace(/\s+/g,'_').slice(0,60);
+    let existing = null;
+    try{
+      const res = await window.storage.get(key, true);
+      existing = res ? JSON.parse(res.value) : null;
+    }catch(e){
+      existing = null;
+    }
+    const better =
+      !existing ||
+      points > existing.points ||
+      (points === existing.points && maxStreak > (existing.bestStreak || 0));
+
+    if(better){
+      await window.storage.set(key, JSON.stringify({
+        nick: playerName,
+        points: points,
+        bestStreak: maxStreak,
+        date: new Date().toISOString()
+      }), true);
+    }
+  }catch(e){
+    console.error('saveScore fallito', e);
+  }
+}
+
+async function loadLeaderboard(){
+  const lbList = document.getElementById('lbList');
+  lbList.innerHTML = '<div class="lb-loading">Caricamento…</div>';
+  try{
+    const listRes = await window.storage.list('leaderboard:', true);
+    const keys = (listRes && listRes.keys) ? listRes.keys.slice(0,100) : [];
+
+    const entries = [];
+    for(const k of keys){
+      try{
+        const r = await window.storage.get(k, true);
+        if(r && r.value) entries.push(JSON.parse(r.value));
+      }catch(e){ /* ignora chiavi corrotte o mancanti */ }
+    }
+
+    entries.sort((a,b)=> (b.points - a.points) || ((b.bestStreak||0) - (a.bestStreak||0)));
+    const top = entries.slice(0,10);
+
+    if(top.length === 0){
+      lbList.innerHTML = '<div class="lb-empty">Nessun punteggio ancora salvato.<br>Gioca per essere il primo!</div>';
+      return;
+    }
+
+    lbList.innerHTML = top.map((e,i)=>
+      '<div class="lb-row">' +
+        '<span class="lb-rank">#' + (i+1) + '</span>' +
+        '<span class="lb-nick">' + escapeHtml(e.nick || '???') + '</span>' +
+        '<span class="lb-pts">' + (e.points||0) + ' pt</span>' +
+        '<span class="lb-streak">⚡' + (e.bestStreak||0) + '</span>' +
+      '</div>'
+    ).join('');
+  }catch(e){
+    lbList.innerHTML = '<div class="lb-empty">Errore nel caricamento della classifica.</div>';
+  }
+}
+
+document.getElementById('lbBtn').addEventListener('click', function(){
+  document.getElementById('lbModal').style.display = 'flex';
+  loadLeaderboard();
+});
+document.getElementById('lbClose').addEventListener('click', function(){
+  document.getElementById('lbModal').style.display = 'none';
+});
+
+// ============================================================
+// AVVIO PARTITA (richiede nickname)
+// ============================================================
+
+function startGame(){
+  const val = document.getElementById('nickInput').value.trim();
+  if(!val){
+    document.getElementById('nickError').textContent = 'Inserisci un nickname per iniziare';
+    document.getElementById('nickInput').focus();
+    return;
+  }
+  playerName = val.slice(0,16);
+  document.getElementById('nickModal').style.display = 'none';
+  brandName.textContent = playerName;
+  newDeck();
+  nextWord();
+}
+
+document.getElementById('nickStart').addEventListener('click', startGame);
+document.getElementById('nickInput').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){ e.preventDefault(); startGame(); }
+});
+document.getElementById('nickInput').focus();
+
     
     
     
@@ -825,6 +1038,7 @@ totalWrong += wrongCount;
 if (wrongCount === 0 && newCorrect > 0) {
 
     streak++;
+    maxStreak = Math.max(maxStreak, streak);
 
     const comboBonus = Math.floor(streak / 3);
 
@@ -869,6 +1083,8 @@ else {
       '<span class="msg tokens">' + tokensHTML + ' &nbsp; (<b>' + deltaLabel + '</b>)</span>' +
     '</div>' +
     '<div class="answerkey">Significati di <b>' + escapeHtml(current.w) + '</b>: ' + escapeHtml(answerKey) + '</div>';
+
+  saveScore();
 }
 
 checkBtn.addEventListener('click', function(){
@@ -910,21 +1126,21 @@ function revealSkipped(){
       '<span class="msg tokens">Parola saltata &nbsp; (<b>-1</b>)</span>' +
     '</div>' +
     '<div class="answerkey">Significati di <b>' + escapeHtml(current.w) + '</b>: ' + escapeHtml(answerKey) + '</div>';
+
+  saveScore();
 }
 
 skipBtn.addEventListener('click', revealSkipped);
 
 resetBtn.addEventListener('click', function(){
-  points = 0; totalWrong = 0; streak = 0;
+  saveScore();
+  points = 0; totalWrong = 0; streak = 0; maxStreak = 0;
   okCount.textContent = points;
   document.querySelector('.wrong-count b').textContent = totalWrong;
   streakCount.textContent = streak;
   newDeck();
   nextWord();
 });
-
-newDeck();
-nextWord();
 
   // Collegamenti extra puramente estetici/comodi per i tasti fisici del "DS",
   // che richiamano le funzioni già definite sopra senza toccarne la logica.
