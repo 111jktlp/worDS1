@@ -667,11 +667,11 @@
 </div>
 
 <div class="ds-wrap">
-  <div class="ds-console">
+  <div class="ds-console" id="dsConsole">
     <div class="cam-dot"></div>
 
     <div class="screen-bezel top-bezel">
-      <div class="screen top-screen">
+      <div class="screen top-screen" id="topScreen">
         <div class="statusbar">
           <span class="brand" id="brandName">worDS</span>
           <span class="hud">
@@ -1149,7 +1149,35 @@ answerInput.addEventListener('keydown', function(e){
     submitAnswer();
   }
 });
+// ============================================================
+// TAP OVUNQUE PER AVANZARE (mobile-friendly)
+// ============================================================
+const dsConsole = document.getElementById('dsConsole');
 
+const IDS_GIA_GESTITI = [
+  'checkBtn', 'skipBtn', 'resetBtn',
+  'lbBtn', 'selectBtn', 'startBtn',
+  'aBtn', 'bBtn', 'xBtn', 'yBtn'
+];
+
+dsConsole.addEventListener('click', function(e){
+  // Non fare nulla se non siamo in attesa di "Avanti"
+  if(!awaitingNext) return;
+
+  // Non fare nulla se i modali sono aperti
+  const nickModal = document.getElementById('nickModal');
+  const lbModal = document.getElementById('lbModal');
+  if(nickModal && nickModal.style.display !== 'none') return;
+  if(lbModal && lbModal.style.display === 'flex') return;
+
+  // Evita il doppio avanzamento se il tap arriva da un bottone
+  // che ha già il suo listener dedicato (checkBtn, skipBtn, ecc.)
+  for(const id of IDS_GIA_GESTITI){
+    if(e.target.closest('#' + id)) return;
+  }
+
+  nextWord();
+});
 function revealSkipped(){
   if(awaitingNext){ nextWord(); return; }
 
