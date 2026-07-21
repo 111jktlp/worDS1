@@ -986,7 +986,7 @@ async function loadLeaderboard() {
     const q = query(
       collection(db, "classifica"),
       orderBy("points", "desc"),
-      limit(10)
+      limit(100)
     );
 
     const querySnapshot = await getDocs(q);
