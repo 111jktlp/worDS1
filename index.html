@@ -713,7 +713,16 @@
       <div class="screen-bezel bottom-bezel">
         <div class="screen bottom-screen" id="answerForm">
           <div class="touch-hint">swag</div>
-          <input id="answer" type="text" placeholder="traduzione" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <input
+    id="answer"
+    type="text"
+    placeholder="traduzione"
+    autocomplete="off"
+    autocapitalize="off"
+    autocorrect="off"
+    spellcheck="false"
+    enterkeyhint="done"
+    inputmode="text">
           <div class="touch-buttons">
             <button type="button" class="tbtn tbtn-primary" id="checkBtn">VERIFICA</button>
             <button type="button" class="tbtn" id="skipBtn">Bohhh</button>
@@ -1143,11 +1152,17 @@ function submitAnswer(){
 
 checkBtn.addEventListener('click', submitAnswer);
 
-answerInput.addEventListener('keydown', function(e){
-  if(e.key === 'Enter'){
-    e.preventDefault();
-    submitAnswer();
-  }
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Enter') return;
+  e.preventDefault();
+  submitAnswer();
+});
+    
+answerInput.addEventListener("keydown", function(e){
+    if (e.key === "Enter") {
+        e.preventDefault();
+        submitAnswer();
+    }
 });
 // ============================================================
 // TAP OVUNQUE PER AVANZARE (mobile-friendly)
