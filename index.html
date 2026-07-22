@@ -1150,6 +1150,8 @@ function submitAnswer(){
   saveScore();
 }
 
+let enterLock = false;    
+    
 checkBtn.addEventListener('click', submitAnswer);
 
 document.addEventListener('keydown', function(e){
@@ -1158,11 +1160,19 @@ document.addEventListener('keydown', function(e){
   submitAnswer();
 });
     
-answerInput.addEventListener("keydown", function(e){
-    if (e.key === "Enter") {
-        e.preventDefault();
-        submitAnswer();
-    }
+answerInput.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+
+    e.preventDefault();
+
+    if(enterLock) return;
+
+    enterLock = true;
+    submitAnswer();
+
+    setTimeout(() => {
+        enterLock = false;
+    }, 200);
 });
 // ============================================================
 // TAP OVUNQUE PER AVANZARE (mobile-friendly)
