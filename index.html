@@ -650,8 +650,12 @@
   <div class="modal-box">
     <h3>worDS</h3>
     <p>Inserisci un nickname per iniziare.
-<br>Verrà usato per salvare i tuoi punteggi in classifica.
-<br>Hai 100 secondi: ogni 3 parole azzeccate di fila guadagni +15s!.</p>
+<br>Hai 100 secondi: ogni 3 parole azzeccate di fila guadagni +15s!.
+<br>Risposta corretta 1pt. - Risposta sbagliata -1pt.
+        <br>AGGIORNAMENTI 
+        <br> 22/07: -si puo rispondere e avanzare usando INVIO (sia desktop che mobile)
+        <br> CORA LAVORA INVECE DI SFONDARE OGNI RECORD
+      </p>
     <input id="nickInput" maxlength="16" placeholder="Nickname" autocomplete="off" autocapitalize="off" spellcheck="false">
     <div id="nickError"></div>
     <button type="button" class="modal-btn" id="nickStart">GIOCA ▶</button>
@@ -1126,12 +1130,6 @@ function submitAnswer(){
   okCount.textContent = points;
   document.querySelector('.wrong-count b').textContent = totalWrong;
   streakCount.textContent = streak;
-    
-  let ignoreNextTap = false;  
-    
-    
-    
-
   answerInput.readOnly = true;
   awaitingNext = true;
   ignoreNextTap = true;
@@ -1237,7 +1235,7 @@ function revealSkipped(){
   streakCount.textContent = streak;
 
   answerInput.value = '';
-  answerInput.disabled = true;
+ answerInput.readOnly = true;
   answerInput.className = 'wrong';
   awaitingNext = true; 
   checkBtn.textContent = 'Avanti →';   
