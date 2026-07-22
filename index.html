@@ -915,7 +915,8 @@ function nextWord(){
 
   answerInput.value = '';
   answerInput.className = '';
-  answerInput.disabled = false;
+  answerInput.readOnly = false;
+answerInput.focus();
   feedback.innerHTML = '';
   checkBtn.textContent = 'Verifica';
   answerInput.focus();
@@ -1125,9 +1126,21 @@ function submitAnswer(){
   okCount.textContent = points;
   document.querySelector('.wrong-count b').textContent = totalWrong;
   streakCount.textContent = streak;
+    
+  let ignoreNextTap = false;  
+    
+    
+    
 
-  answerInput.disabled = true;
+  answerInput.readOnly = true;
   awaitingNext = true;
+  ignoreNextTap = true;
+
+setTimeout(() => {
+    ignoreNextTap = false;
+}, 250);
+    
+    
   checkBtn.textContent = 'Avanti →';
   answerInput.className = delta > 0 ? 'correct' : (delta < 0 ? 'wrong' : 'neutral');
 
@@ -1151,14 +1164,11 @@ function submitAnswer(){
 }
 
 let enterLock = false;    
+ let ignoreNextTap = false;
     
 checkBtn.addEventListener('click', submitAnswer);
 
-document.addEventListener('keydown', function(e){
-  if(e.key !== 'Enter') return;
-  e.preventDefault();
-  submitAnswer();
-});
+
     
 answerInput.addEventListener('keydown', function(e){
     if(e.key !== 'Enter') return;
@@ -1172,7 +1182,7 @@ answerInput.addEventListener('keydown', function(e){
 
     setTimeout(() => {
         enterLock = false;
-    }, 200);
+    }, 300);
 });
 // ============================================================
 // TAP OVUNQUE PER AVANZARE (mobile-friendly)
@@ -1186,6 +1196,9 @@ const IDS_GIA_GESTITI = [
 ];
 
 dsConsole.addEventListener('click', function(e){
+
+  if(ignoreNextTap) return;
+
   // Non fare nulla se non siamo in attesa di "Avanti"
   if(!awaitingNext) return;
 
